@@ -32,3 +32,10 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+config :ai_email_sorting, AiEmailSorting.GoogleOAuth,
+  client_id: "test-client-id",
+  client_secret: "test-client-secret",
+  authorization_endpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+  token_endpoint: "https://oauth2.googleapis.com/token",
+  userinfo_endpoint: "https://www.googleapis.com/oauth2/v3/userinfo"

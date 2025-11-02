@@ -7,6 +7,19 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
+config :ai_email_sorting, AiEmailSorting.GoogleOAuth,
+  client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+  authorization_endpoint:
+    System.get_env("GOOGLE_AUTHORIZATION_ENDPOINT") ||
+      "https://accounts.google.com/o/oauth2/v2/auth",
+  token_endpoint:
+    System.get_env("GOOGLE_TOKEN_ENDPOINT") ||
+      "https://oauth2.googleapis.com/token",
+  userinfo_endpoint:
+    System.get_env("GOOGLE_USERINFO_ENDPOINT") ||
+      "https://www.googleapis.com/oauth2/v3/userinfo"
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server
