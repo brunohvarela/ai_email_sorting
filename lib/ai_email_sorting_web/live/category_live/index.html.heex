@@ -1,1 +1,37 @@
-<h1>Welcome to the AI email sorting App</h1>
+<Layouts.app flash={@flash} current_user={@current_user}>
+  <section class="space-y-6">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Email categories</h1>
+        <p class="text-sm text-base-content/60">
+          Segment incoming Gmail conversations automatically and keep your inbox Zen.
+        </p>
+      </div>
+
+      <.link
+        href={~p"/auth/google"}
+        :if={is_nil(@current_user)}
+        class="btn btn-primary btn-sm rounded-full"
+      >
+        Connect Gmail to begin
+      </.link>
+    </div>
+
+    <div :if={@current_user} class="rounded-3xl border border-dashed border-base-300 bg-base-100/60 p-12 text-center">
+      <p class="text-lg font-semibold">Category intelligence is coming soon ??</p>
+      <p class="mt-2 text-sm text-base-content/60">
+        We'll analyse your Gmail history to learn how you triage conversations, then suggest smart clusters and automation rules tailored to your workflow.
+      </p>
+    </div>
+
+    <div :if={is_nil(@current_user)} class="rounded-3xl border border-base-200 bg-base-100/60 p-10 text-center">
+      <p class="text-base font-semibold text-base-content/80">Sign in with Gmail to design AI-powered categories.</p>
+      <p class="mt-2 text-sm text-base-content/60">
+        We'll unlock pre-trained templates, dynamic rules, and analytics once you connect your account.
+      </p>
+      <.link href={~p"/auth/google"} class="btn btn-primary mt-6 rounded-full">
+        Sign in now
+      </.link>
+    </div>
+  </section>
+</Layouts.app>

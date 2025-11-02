@@ -52,6 +52,8 @@ defmodule AiEmailSortingWeb do
     quote do
       use Phoenix.LiveView
 
+      on_mount {AiEmailSortingWeb.UserAuth, :mount_current_user}
+
       unquote(html_helpers())
     end
   end
