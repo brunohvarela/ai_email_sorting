@@ -13,7 +13,7 @@ defmodule AiEmailSorting.Categories.Category do
   @doc false
   def changeset(category, attrs) do
     category
-    |> cast(attrs, [:name, :description, :user_id])
-    |> validate_required([:name, :description, :user_id])
+    |> cast(attrs, [:name, :description])
+    |> validate_required([:name, :description])
   end
 end

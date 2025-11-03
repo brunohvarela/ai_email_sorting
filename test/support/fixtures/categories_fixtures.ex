@@ -4,18 +4,25 @@ defmodule AiEmailSorting.CategoriesFixtures do
   entities via the `AiEmailSorting.Categories` context.
   """
 
+  import AiEmailSorting.AccountsFixtures
+
+  alias AiEmailSorting.Categories
+
   @doc """
-  Generate a category.
+  Generate a category scoped to the given user.
   """
   def category_fixture(attrs \\ %{}) do
-    {:ok, category} =
+    user = Map.get_lazy(attrs, :user, fn -> user_fixture() end)
+
+    attrs =
       attrs
+      |> Map.drop([:user])
       |> Enum.into(%{
         description: "some description",
         name: "some name"
       })
-      |> AiEmailSorting.Categories.create_category()
 
+    {:ok, category} = Categories.create_category_for_user(user, attrs)
     category
   end
 end

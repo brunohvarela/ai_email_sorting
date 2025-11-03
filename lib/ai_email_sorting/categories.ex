@@ -4,101 +4,90 @@ defmodule AiEmailSorting.Categories do
   """
 
   import Ecto.Query, warn: false
+  alias Ecto.Changeset
+
+  alias AiEmailSorting.Accounts.User
+  alias AiEmailSorting.Categories.Category
   alias AiEmailSorting.Repo
 
-  alias AiEmailSorting.Categories.Category
-
   @doc """
-  Returns the list of categories.
-
-  ## Examples
-
-      iex> list_categories()
-      [%Category{}, ...]
-
+  Returns all categories that belong to the given user ordered by insertion time.
   """
-  def list_categories do
-    Repo.all(Category)
+  @spec list_categories_for_user(User.t()) :: [Category.t()]
+  def list_categories_for_user(%User{id: user_id}) do
+    Category
+    |> where([c], c.user_id == ^user_id)
+    |> order_by([c], asc: c.inserted_at)
+    |> Repo.all()
   end
 
   @doc """
-  Gets a single category.
+  Fetches a category that belongs to the given user.
 
-  Raises `Ecto.NoResultsError` if the Category does not exist.
-
-  ## Examples
-
-      iex> get_category!(123)
-      %Category{}
-
-      iex> get_category!(456)
-      ** (Ecto.NoResultsError)
-
+  Raises `Ecto.NoResultsError` if the category cannot be found for the user.
   """
-  def get_category!(id), do: Repo.get!(Category, id)
+  @spec get_category_for_user!(User.t(), integer() | binary()) :: Category.t()
+  def get_category_for_user!(%User{id: user_id}, id) when is_integer(id) do
+    Repo.get_by!(Category, id: id, user_id: user_id)
+  end
+
+  def get_category_for_user!(%User{} = user, id) when is_binary(id) do
+    id
+    |> String.to_integer()
+    |> get_category_for_user!(user)
+  rescue
+    ArgumentError -> raise Ecto.NoResultsError, queryable: Category
+  end
 
   @doc """
-  Creates a category.
-
-  ## Examples
-
-      iex> create_category(%{field: value})
-      {:ok, %Category{}}
-
-      iex> create_category(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Creates a category owned by the given user.
   """
-  def create_category(attrs) do
+  @spec create_category_for_user(User.t(), map()) ::
+          {:ok, Category.t()} | {:error, Changeset.t()}
+  def create_category_for_user(%User{} = user, attrs) when is_map(attrs) do
     %Category{}
     |> Category.changeset(attrs)
+    |> associate_user(user)
     |> Repo.insert()
   end
 
   @doc """
-  Updates a category.
-
-  ## Examples
-
-      iex> update_category(category, %{field: new_value})
-      {:ok, %Category{}}
-
-      iex> update_category(category, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Updates a category that belongs to the given user.
   """
-  def update_category(%Category{} = category, attrs) do
+  @spec update_category_for_user(User.t(), Category.t(), map()) ::
+          {:ok, Category.t()} | {:error, Changeset.t()}
+  def update_category_for_user(%User{} = user, %Category{} = category, attrs) when is_map(attrs) do
+    category = get_category_for_user!(user, category.id)
+
     category
     |> Category.changeset(attrs)
+    |> associate_user(user)
     |> Repo.update()
   end
 
   @doc """
-  Deletes a category.
-
-  ## Examples
-
-      iex> delete_category(category)
-      {:ok, %Category{}}
-
-      iex> delete_category(category)
-      {:error, %Ecto.Changeset{}}
-
+  Deletes a category that belongs to the given user.
   """
-  def delete_category(%Category{} = category) do
+  @spec delete_category_for_user(User.t(), Category.t()) ::
+          {:ok, Category.t()} | {:error, Changeset.t()}
+  def delete_category_for_user(%User{} = user, %Category{} = category) do
+    category = get_category_for_user!(user, category.id)
+
     Repo.delete(category)
   end
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking category changes.
-
-  ## Examples
-
-      iex> change_category(category)
-      %Ecto.Changeset{data: %Category{}}
-
   """
+  @spec change_category(Category.t(), map()) :: Changeset.t()
   def change_category(%Category{} = category, attrs \\ %{}) do
     Category.changeset(category, attrs)
+  end
+
+  defp associate_user(%Changeset{} = changeset, %User{id: user_id}) do
+    changeset
+    |> Changeset.put_change(:user_id, user_id)
+    |> Changeset.validate_required([:user_id])
+    |> Changeset.assoc_constraint(:user)
   end
 end

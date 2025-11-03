@@ -2,121 +2,102 @@ defmodule AiEmailSortingWeb.CategoryLiveTest do
   use AiEmailSortingWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import AiEmailSorting.AccountsFixtures
   import AiEmailSorting.CategoriesFixtures
 
-  @create_attrs %{name: "some name", description: "some description"}
-  @update_attrs %{name: "some updated name", description: "some updated description"}
-  @invalid_attrs %{name: nil, description: nil}
-  defp create_category(_) do
-    category = category_fixture()
+  @create_attrs %{name: "Product feedback", description: "Notes from NPS and concierge calls"}
+  @update_attrs %{name: "Key clients", description: "VIP accounts who need a response within an hour"}
+  @invalid_attrs %{name: "", description: ""}
 
-    %{category: category}
+  defp log_in(conn, user) do
+    conn
+    |> init_test_session(%{})
+    |> put_session(:user_id, user.id)
   end
 
   describe "Index" do
-    setup [:create_category]
-
-    test "lists all categories", %{conn: conn, category: category} do
-      {:ok, _index_live, html} = live(conn, ~p"/categories")
-
-      assert html =~ "Listing Categories"
-      assert html =~ category.name
+    test "redirects unauthenticated visitors to the landing page", %{conn: conn} do
+      assert {:error, {:redirect, %{to: ~p"/"}}} = live(conn, ~p"/categories")
     end
 
-    test "saves new category", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/categories")
+    test "lists only the signed-in user's categories", %{conn: conn} do
+      user = user_fixture()
+      other_user = user_fixture()
 
-      assert {:ok, form_live, _} =
-               index_live
-               |> element("a", "New Category")
-               |> render_click()
-               |> follow_redirect(conn, ~p"/categories/new")
+      my_category = category_fixture(user: user, name: "Priority clients")
+      _other_category = category_fixture(user: other_user, name: "Finance")
 
-      assert render(form_live) =~ "New Category"
+      conn = log_in(conn, user)
 
-      assert form_live
+      {:ok, _view, html} = live(conn, ~p"/categories")
+
+      assert html =~ "Priority clients"
+      refute html =~ "Finance"
+      assert html =~ "1 active segment"
+    end
+
+    test "creates a new category from the inline composer", %{conn: conn} do
+      user = user_fixture()
+      conn = log_in(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/categories")
+
+      view
+      |> element("button[phx-click=\"new-category\"]", "New category")
+      |> render_click()
+
+      assert view |> element("#category-editor h2") |> render() =~ "Create a category"
+
+      assert view
              |> form("#category-form", category: @invalid_attrs)
              |> render_change() =~ "can&#39;t be blank"
 
-      assert {:ok, index_live, _html} =
-               form_live
-               |> form("#category-form", category: @create_attrs)
-               |> render_submit()
-               |> follow_redirect(conn, ~p"/categories")
+      view
+      |> form("#category-form", category: @create_attrs)
+      |> render_submit()
 
-      html = render(index_live)
+      html = render(view)
       assert html =~ "Category created successfully"
-      assert html =~ "some name"
+      assert html =~ @create_attrs.name
+      assert html =~ "2 active segments"
     end
 
-    test "updates category in listing", %{conn: conn, category: category} do
-      {:ok, index_live, _html} = live(conn, ~p"/categories")
+    test "edits an existing category", %{conn: conn} do
+      user = user_fixture()
+      category = category_fixture(user: user)
+      conn = log_in(conn, user)
 
-      assert {:ok, form_live, _html} =
-               index_live
-               |> element("#categories-#{category.id} a", "Edit")
-               |> render_click()
-               |> follow_redirect(conn, ~p"/categories/#{category}/edit")
+      {:ok, view, _html} = live(conn, ~p"/categories")
 
-      assert render(form_live) =~ "Edit Category"
+      view
+      |> element("button[phx-click=\"edit-category\"][phx-value-id=\"#{category.id}\"]", "Edit")
+      |> render_click()
 
-      assert form_live
-             |> form("#category-form", category: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
+      assert render(view) =~ "Edit category"
 
-      assert {:ok, index_live, _html} =
-               form_live
-               |> form("#category-form", category: @update_attrs)
-               |> render_submit()
-               |> follow_redirect(conn, ~p"/categories")
+      view
+      |> form("#category-form", category: @update_attrs)
+      |> render_submit()
 
-      html = render(index_live)
+      html = render(view)
       assert html =~ "Category updated successfully"
-      assert html =~ "some updated name"
+      assert html =~ @update_attrs.name
+      assert html =~ @update_attrs.description
     end
 
-    test "deletes category in listing", %{conn: conn, category: category} do
-      {:ok, index_live, _html} = live(conn, ~p"/categories")
+    test "deletes a category from the list", %{conn: conn} do
+      user = user_fixture()
+      category = category_fixture(user: user)
+      conn = log_in(conn, user)
 
-      assert index_live |> element("#categories-#{category.id} a", "Delete") |> render_click()
-      refute has_element?(index_live, "#categories-#{category.id}")
-    end
-  end
+      {:ok, view, _html} = live(conn, ~p"/categories")
 
-  describe "Show" do
-    setup [:create_category]
+      view
+      |> element("button[phx-click=\"delete-category\"][phx-value-id=\"#{category.id}\"]", "Delete")
+      |> render_click()
 
-    test "displays category", %{conn: conn, category: category} do
-      {:ok, _show_live, html} = live(conn, ~p"/categories/#{category}")
-
-      assert html =~ "Show Category"
-      assert html =~ category.name
-    end
-
-    test "updates category and returns to show", %{conn: conn, category: category} do
-      {:ok, show_live, _html} = live(conn, ~p"/categories/#{category}")
-
-      assert {:ok, form_live, _} =
-               show_live
-               |> element("a", "Edit")
-               |> render_click()
-               |> follow_redirect(conn, ~p"/categories/#{category}/edit?return_to=show")
-
-      assert render(form_live) =~ "Edit Category"
-
-      assert form_live
-             |> form("#category-form", category: @invalid_attrs)
-             |> render_change() =~ "can&#39;t be blank"
-
-      assert {:ok, show_live, _html} =
-               form_live
-               |> form("#category-form", category: @update_attrs)
-               |> render_submit()
-               |> follow_redirect(conn, ~p"/categories/#{category}")
-
-      html = render(show_live)
-      assert html =~ "Category updated successfully"
-      assert html =~ "some updated name"
+      refute render(view) =~ category.name
+      assert render(view) =~ "Category deleted successfully"
     end
   end
 end

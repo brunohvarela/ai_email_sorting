@@ -23,7 +23,10 @@ defmodule AiEmailSortingWeb.Router do
     get "/auth/google/callback", AuthController, :callback
     delete "/logout", AuthController, :delete
 
-    live "/categories", CategoryLive.Index, :index
+    live_session :require_authenticated_user,
+      on_mount: [{AiEmailSortingWeb.UserAuth, :ensure_authenticated}] do
+      live "/categories", CategoryLive.Index, :index
+    end
   end
 
   # Other scopes may use custom stacks.
