@@ -18,7 +18,7 @@ defmodule AiEmailSortingWeb.Router do
   scope "/", AiEmailSortingWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", HomeLive, :index
     get "/auth/google", AuthController, :request
     get "/auth/google/callback", AuthController, :callback
     delete "/logout", AuthController, :delete
