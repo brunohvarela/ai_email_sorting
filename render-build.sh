@@ -1,13 +1,12 @@
-#!/usr/bin/env bash
-set -o errexit
-
+# Initial setup
 mix deps.get --only prod
-mix deps.compile
+MIX_ENV=prod mix compile
 
-#npm install --prefix ./assets
-#mix assets.deploy  # compila JS/CSS e roda phx.digest
+# Compile assets
+MIX_ENV=prod mix assets.deploy
 
-mix phx.digest
+# Custom tasks (like DB migrations)
+MIX_ENV=prod mix ecto.migrate
 
-#mix compile
-mix release
+# Finally run the server
+PORT=4001 MIX_ENV=prod mix phx.server
