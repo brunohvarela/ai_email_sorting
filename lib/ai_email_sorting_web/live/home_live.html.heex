@@ -1,0 +1,179 @@
+<Layouts.app flash={@flash} current_user={@current_user}>
+  <section class="space-y-6 rounded-3xl border border-success/30 bg-success/10 p-8 shadow-inner" :if={@current_user}>
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-center gap-4">
+        <span class="avatar placeholder">
+          <span class="size-14 rounded-full bg-success/20 text-lg font-semibold text-success">
+            {Layouts.user_initials(@current_user)}
+          </span>
+        </span>
+        <div class="space-y-1">
+          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-success/70">Signed in</p>
+          <p class="text-xl font-semibold text-success-content">
+            {@current_user.name || @current_user.email}
+          </p>
+          <p :if={@current_user.email} class="text-sm text-success/80">{@current_user.email}</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <.link navigate={~p"/categories"} class="btn btn-success btn-soft rounded-full px-5 text-sm font-semibold">
+          <.icon name="hero-sparkles" class="size-4" /> Manage categories
+        </.link>
+        <.link href={~p"/logout"} method="delete" class="btn btn-ghost rounded-full text-sm font-semibold">
+          Sign out
+        </.link>
+      </div>
+    </div>
+
+    <p class="text-sm text-success/80">
+      Keep building your workspace by connecting Gmail inboxes and curating the categories that power your automations.
+    </p>
+  </section>
+
+  <section :if={is_nil(@current_user)} class="rounded-3xl border border-base-200 bg-base-100/80 p-8 text-center shadow-sm">
+    <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-base-200 text-base-content/50">
+      <.icon name="hero-user-circle" class="size-8" />
+    </div>
+    <p class="mt-4 text-lg font-semibold text-base-content">You're browsing as a guest</p>
+    <p class="mt-2 text-sm text-base-content/60">
+      Sign in with Gmail to manage accounts, review your categories, and create new ones.
+    </p>
+    <.link
+      href={~p"/auth/google"}
+      class="btn btn-primary mt-6 rounded-full px-6 text-sm font-semibold shadow-lg shadow-primary/20"
+    >
+      <.icon name="hero-envelope" class="size-5" /> Sign in with Gmail
+    </.link>
+  </section>
+
+  <div class="mt-12 grid gap-8 lg:grid-cols-3">
+    <section class="flex flex-col justify-between gap-6 rounded-3xl border border-base-200 bg-base-100/90 p-8 shadow-lg shadow-primary/10">
+      <header class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[0.35em] text-primary/60">Connections</p>
+        <h2 class="text-2xl font-bold text-base-content">Add Gmail accounts</h2>
+        <p class="text-sm text-base-content/60">
+          Quickly connect Gmail inboxes to unlock AI-powered sorting. This action will be available soon.
+        </p>
+      </header>
+
+      <button
+        id="connect-gmail-button"
+        class="btn btn-primary btn-block rounded-full px-6 py-3 text-sm font-semibold shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-70"
+        type="button"
+        disabled
+      >
+        <.icon name="hero-envelope" class="size-5" /> Connect Gmail account
+      </button>
+    </section>
+
+    <section class="space-y-6 rounded-3xl border border-base-200 bg-base-100/90 p-8 shadow-lg shadow-secondary/10 lg:col-span-1 lg:row-span-2">
+      <header class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[0.35em] text-secondary/60">Categories</p>
+        <h2 class="text-2xl font-bold text-base-content">Your current categories</h2>
+        <p class="text-sm text-base-content/60">
+          Each category defines how we triage Gmail conversations for you and your team.
+        </p>
+      </header>
+
+      <div class="rounded-2xl border border-base-200 bg-base-100" id="category-list">
+        <ul :if={!@categories_empty?} class="divide-y divide-base-200">
+          <li
+            :for={category <- @categories}
+            class="flex flex-col gap-2 p-6 transition duration-200 ease-out hover:bg-base-100"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-base-content/40">Category</p>
+                <p class="text-lg font-semibold text-base-content">{category.name}</p>
+              </div>
+              <span class="rounded-full bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-secondary/80">
+                Active
+              </span>
+            </div>
+            <p class="text-sm leading-relaxed text-base-content/70">{category.description}</p>
+          </li>
+        </ul>
+
+        <div :if={@categories_empty? && @current_user} class="flex flex-col items-center gap-3 px-10 py-16 text-center">
+          <div class="flex size-12 items-center justify-center rounded-full bg-base-200 text-base-content/60">
+            <.icon name="hero-inbox" class="size-6" />
+          </div>
+          <p class="text-lg font-semibold text-base-content">No categories yet</p>
+          <p class="text-sm text-base-content/60">Create your first category to start orchestrating Gmail routing.</p>
+        </div>
+
+        <div :if={@categories_empty? && is_nil(@current_user)} class="px-10 py-16 text-center text-sm text-base-content/60">
+          Sign in with Gmail to see your categories.
+        </div>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-6 rounded-3xl border border-base-200 bg-base-100/90 p-8 shadow-lg shadow-info/10">
+      <header class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-[0.35em] text-info/60">Create</p>
+        <h2 class="text-2xl font-bold text-base-content">Add a new category</h2>
+        <p class="text-sm text-base-content/60">
+          Give the category a descriptive name and short summary so the team knows when to use it.
+        </p>
+      </header>
+
+      <button
+        id="add-category-button"
+        type="button"
+        phx-click="open-category-form"
+        class="inline-flex items-center justify-center gap-2 rounded-full bg-info px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-info/20 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info disabled:cursor-not-allowed disabled:opacity-70"
+        disabled={is_nil(@current_user)}
+      >
+        <.icon name="hero-plus" class="size-4" /> New category
+      </button>
+
+      <p :if={is_nil(@current_user)} class="text-sm text-base-content/60">
+        Sign in with Gmail to create categories for your workspace.
+      </p>
+
+      <div :if={@form_open?} class="rounded-2xl border border-base-200 bg-base-100 p-6 shadow-inner">
+        <.form
+          for={@form}
+          id="new-category-form"
+          class="space-y-6"
+          phx-change="validate-category"
+          phx-submit="save-category"
+        >
+          <.input
+            field={@form[:name]}
+            type="text"
+            label="Category name"
+            placeholder="e.g. VIP customers"
+            class="w-full rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-base text-base-content placeholder:text-base-content/40 shadow-inner shadow-base-300/10 transition focus:border-info focus:outline-none focus:ring-2 focus:ring-info/20"
+          />
+
+          <.input
+            field={@form[:description]}
+            type="textarea"
+            label="Description"
+            placeholder="Describe when emails belong here"
+            rows="3"
+            class="w-full rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-sm leading-relaxed text-base-content placeholder:text-base-content/40 shadow-inner shadow-base-300/10 transition focus:border-info focus:outline-none focus:ring-2 focus:ring-info/20"
+          />
+
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              phx-click="cancel-category-form"
+              class="inline-flex items-center justify-center gap-2 rounded-full border border-base-300 px-5 py-2 text-sm font-semibold text-base-content/70 transition hover:-translate-y-0.5 hover:bg-base-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="inline-flex items-center justify-center gap-2 rounded-full bg-info px-6 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-info"
+            >
+              Create category
+            </button>
+          </div>
+        </.form>
+      </div>
+    </section>
+  </div>
+</Layouts.app>
